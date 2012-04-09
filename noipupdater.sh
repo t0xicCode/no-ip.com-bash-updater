@@ -6,7 +6,7 @@ PASSWORD=password
 HOST=hostsite
 LOGFILE=logdir/noip.log
 STOREDIPFILE=configdir/current_ip
-USERAGENT="Simple Bash No-IP Updater/0.4 antoniocs@gmail.com"
+USERAGENT="Simple Bash No-IP Updater/0.9 support@afrosoft.tk"
 
 if [ ! -e $STOREDIPFILE ]; then 
 	touch $STOREDIPFILE
