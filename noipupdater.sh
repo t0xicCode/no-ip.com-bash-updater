@@ -16,7 +16,8 @@ fi
 if [ -e $DIR/lock ]; then
 	# Lock file is placed when errors require human interaction
 	# the script wil not run until the file is removed
-	echo "Permanently locked due to previous failure" >&2
+	echo "Permanently locked due to previous failure." >&2
+	echo "Please see your logs and refer to the documentation for more information." >&2
 	exit 64
 fi
 
@@ -27,7 +28,8 @@ if [ -e $DIR/lock_temp ]; then
 	current_time=$(date +"%s")
 	if [ $(($current_time - $created_time)) -lt 1800 ]; then
 		# It has been less than 30 minutes
-		echo "Temporarily locked due to previous failure" >&2
+		echo "Temporarily locked due to previous failure." >&2
+		echo "System will automatically resume after a cooldown period." >&2
 		exit 65
 	else
 		rm $DIR/lock_temp
@@ -48,10 +50,33 @@ if [ "$NEWIP" != "$STOREDIP" ]; then
 		echo $NEWIP > $STOREDIPFILE
 	else
 		# We received an error
+		echo $RESULT > $DIR/error
 		if [ "$RESULT" == "911" ]; then
 			# API states that we should wait 30 minutes, so let's
 			# create a temporary lock file
+			echo "Problems with the servers. Let's try in 30 minutes" >& 2
 			touch $DIR/lock_temp
+			exit 66
+		elif [ "$RESULT" == "nohost" ]; then
+			echo "Hostname does not exist." >& 2
+			touch $DIR/lock
+			exit 67
+		elif [ "$RESULT" == "badauth" ]; then
+			echo "Username/password is not valid." >& 2
+			touch $DIR/lock
+			exit 68
+		elif [ "$RESULT" == "badagent" ]; then
+			echo "We have been blacklisted. Please contact support@afrosoft.tk." >& 2
+			touch $DIR/lock
+			exit 69
+		elif [ "$RESULT" == "!donator" ]; then
+			echo "This should not happen. Please contact support@afrosoft.tk." >& 2
+			touch $DIR/lock
+			exit 70
+		elif [ "$RESULT" == "abuse" ]; then
+			echo "Your account is blocked. Please contact http://www.no-ip.com/ticket/ ." >& 2
+			touch $DIR/lock
+			exit 70
 		fi
 	fi
 else
