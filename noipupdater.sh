@@ -17,6 +17,13 @@ IP_COMMAND="cat $STOREDIPFILE"
 while [ $# -ge 1 ] ; do
 	case $1 in
 #		-c) config_file=$2; shift 2;;
+		-u) USERNAME=$2; shift 2;;
+		-p) PASSWORD=$2; shift 2;;
+		-h) HOST=$2; shift 2;;
+		-l) LOGFILE=$2; shift 2;;
+		--dir) DIR=$2; shift 2;;
+		-s) STOREDIPFILE=$2; shift 2;;
+		-i) IP_COMMAND=$2; shift 2;;
 		-d) DEBUG=true; shift 1;;
 		*) shift 1 ;;
 	esac
