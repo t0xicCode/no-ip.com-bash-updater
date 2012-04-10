@@ -8,6 +8,20 @@ LOGFILE=logs/noip.log
 DIR=config
 STOREDIPFILE=$DIR/current_ip
 USERAGENT="Simple Bash No-IP Updater/0.9 support@afrosoft.tk"
+# It is extremely important to fill the next one out. The command (or string of
+# commands) in the following line should return the IP address of the host, with 
+# absolutely no other content. If there is anything else, No-IP will return an 
+# abuse error.
+IP_COMMAND="cat $STOREDIPFILE"
+
+while [ $# -ge 1 ] ; do
+	case $1 in
+#		-c) config_file=$2; shift 2;;
+		-d) DEBUG=true; shift 1;;
+		*) shift 1 ;;
+	esac
+done
+
 
 if [ ! -e $STOREDIPFILE ]; then 
 	touch $STOREDIPFILE
@@ -16,9 +30,12 @@ fi
 if [ -e $DIR/lock ]; then
 	# Lock file is placed when errors require human interaction
 	# the script wil not run until the file is removed
+	test $DEBUG && echo "Permanent lock"
 	echo "Permanently locked due to previous failure." >&2
 	echo "Please see your logs and refer to the documentation for more information." >&2
 	exit 64
+else
+	test $DEBUG && echo "No permanent lock"
 fi
 
 if [ -e $DIR/lock_temp ]; then
@@ -28,30 +45,41 @@ if [ -e $DIR/lock_temp ]; then
 	current_time=$(date +"%s")
 	if [ $(($current_time - $created_time)) -lt 1800 ]; then
 		# It has been less than 30 minutes
+		test $DEBUG && echo "Temporary lock"
 		echo "Temporarily locked due to previous failure." >&2
 		echo "System will automatically resume after a cooldown period." >&2
 		exit 65
 	else
+		test $DEBUG && echo "No temporary lock"
 		rm $DIR/lock_temp
 	fi
 fi
-		
 
-NEWIP=$(wget -O - http://www.whatismyip.org/ -o /dev/null | grep "Your Ip Address" | awk -F">" '{print $3}' | awk -F"<" '{print $1}')
+NEWIP=`$IP_COMMAND`
 STOREDIP=$(cat $STOREDIPFILE)
 DATE=$(date +"%Y-%m-%d %H:%M:%S")
 
+test $DEBUG && echo "New IP: $NEWIP"
+test $DEBUG && echo "Stored IP: $STOREDIP"
+
 if [ "$NEWIP" != "$STOREDIP" ]; then
-	RESULT=$(wget -O - -q --user-agent="$USERAGENT" --no-check-certificate "https://$USERNAME:$PASSWORD@dynupdate.no-ip.com/nic/update?hostname=$HOST&myip=$NEWIP")
+	test $DEBUG && echo "IP change detected"
+	URL="https://$USERNAME:$PASSWORD@dynupdate.no-ip.com/nic/update?hostname=$HOST&myip=$NEWIP"
+	test $DEBUG && echo "Update URL: $URL"
+	RESULT=$(wget -O - -q --user-agent="$USERAGENT" --no-check-certificate "$URL")
+	test $DEBUG && echo "Update Result: $RESULT"
 
 	echo "[$DATE] $RESULT" >>$LOGFILE
-	if [ "$RESULT" == "good $NEWIP" -o "$RESULT" == "nochg $NEWIP" ]; then
+	if [ "$RESULT" == "good $NEWIP" ]; then
 		# We have a successfull change!
 		echo $NEWIP > $STOREDIPFILE
+	elif [ "$RESULT" == "nochg $NEWIP" ]; then
+		# There is no change
+		break
 	else
 		# We received an error
 		echo $RESULT > $DIR/error
-		echo "The error code received is $RESULT. Alternatively, it can also be found in '$DIR/error'."
+		echo "The error code received is $RESULT. Alternatively, it can also be found in '$DIR/error'." >& 2
 		if [ "$RESULT" == "911" ]; then
 			# API states that we should wait 30 minutes, so let's
 			# create a temporary lock file
@@ -81,6 +109,7 @@ if [ "$NEWIP" != "$STOREDIP" ]; then
 		fi
 	fi
 else
+	test $DEBUG && echo "No IP change detected"
 	echo "[$DATE] No IP change" >> $LOGFILE
 fi
 
