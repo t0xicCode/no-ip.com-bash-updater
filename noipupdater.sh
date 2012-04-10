@@ -5,7 +5,8 @@ USERNAME=username
 PASSWORD=password
 HOST=hostsite
 LOGFILE=logdir/noip.log
-STOREDIPFILE=configdir/current_ip
+DIR=some/dir
+STOREDIPFILE=$DIR/current_ip
 USERAGENT="Simple Bash No-IP Updater/0.9 support@afrosoft.tk"
 
 if [ ! -e $STOREDIPFILE ]; then 
@@ -14,17 +15,19 @@ fi
 
 NEWIP=$(wget -O - http://www.whatismyip.org/ -o /dev/null | grep "Your Ip Address" | awk -F">" '{print $3}' | awk -F"<" '{print $1}')
 STOREDIP=$(cat $STOREDIPFILE)
+DATE=$(date +"%Y-%m-%d %H:%M:%S")
 
 if [ "$NEWIP" != "$STOREDIP" ]; then
-	RESULT=$(wget -O "$LOGFILE" -q --user-agent="$USERAGENT" --no-check-certificate "https://$USERNAME:$PASSWORD@dynupdate.no-ip.com/nic/update?hostname=$HOST&myip=$NEWIP")
+	RESULT=$(wget -O - -q --user-agent="$USERAGENT" --no-check-certificate "https://$USERNAME:$PASSWORD@dynupdate.no-ip.com/nic/update?hostname=$HOST&myip=$NEWIP")
 
-	LOGLINE="[$(date +"%Y-%m-%d %H:%M:%S")] $RESULT"
-	echo $NEWIP > $STOREDIPFILE
+	echo "[$DATE] $RESULT" >>$LOGFILE
+	if [ "$RESULT" == "good $NEWIP" -o "$RESULT" == "nochg $NEWIP" ]; then
+		# we have a successfull change!
+		echo $NEWIP > $STOREDIPFILE
+	fi
 else
-	LOGLINE="[$(date +"%Y-%m-%d %H:%M:%S")] No IP change"
+	echo "[$DATE] No IP change" >> $LOGFILE
 fi
-
-echo $LOGLINE >> $LOGFILE
 
 exit 0
 
