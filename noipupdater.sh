@@ -51,6 +51,7 @@ if [ "$NEWIP" != "$STOREDIP" ]; then
 	else
 		# We received an error
 		echo $RESULT > $DIR/error
+		echo "The error code received is $RESULT. Alternatively, it can also be found in '$DIR/error'."
 		if [ "$RESULT" == "911" ]; then
 			# API states that we should wait 30 minutes, so let's
 			# create a temporary lock file
@@ -76,7 +77,7 @@ if [ "$NEWIP" != "$STOREDIP" ]; then
 		elif [ "$RESULT" == "abuse" ]; then
 			echo "Your account is blocked. Please contact http://www.no-ip.com/ticket/ ." >& 2
 			touch $DIR/lock
-			exit 70
+			exit 71
 		fi
 	fi
 else
