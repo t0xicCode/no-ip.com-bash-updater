@@ -7,7 +7,7 @@ HOST=hostsite
 LOGFILE=logs/noip.log
 DIR=config
 STOREDIPFILE=$DIR/current_ip
-USERAGENT="Simple Bash No-IP Updater/0.10 support@afrosoft.tk"
+USERAGENT="Simple Bash No-IP Updater/1.1 support@afrosoft.tk"
 
 while [ $# -ge 1 ] ; do
 	case $1 in
