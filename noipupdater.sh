@@ -7,12 +7,7 @@ HOST=hostsite
 LOGFILE=logs/noip.log
 DIR=config
 STOREDIPFILE=$DIR/current_ip
-USERAGENT="Simple Bash No-IP Updater/0.9 support@afrosoft.tk"
-# It is extremely important to fill the next one out. The command (or string of
-# commands) in the following line should return the IP address of the host, with 
-# absolutely no other content. If there is anything else, No-IP will return an 
-# abuse error.
-IP_COMMAND="cat $STOREDIPFILE"
+USERAGENT="Simple Bash No-IP Updater/0.10 support@afrosoft.tk"
 
 while [ $# -ge 1 ] ; do
 	case $1 in
@@ -62,7 +57,7 @@ if [ -e $DIR/lock_temp ]; then
 	fi
 fi
 
-NEWIP=`$IP_COMMAND`
+NEWIP=$(wget -O - http://icanhazip.com/ -o /dev/null)
 STOREDIP=$(cat $STOREDIPFILE)
 DATE=$(date +"%Y-%m-%d %H:%M:%S")
 
